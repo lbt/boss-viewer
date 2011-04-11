@@ -1,0 +1,15 @@
+Source: boss-viewer
+Section: unknown
+Priority: extra
+Maintainer: David Greaves <david@dgreaves.com>
+Build-Depends: debhelper (>= 7.0.50~)
+Standards-Version: 3.8.4
+Homepage: 
+#Vcs-Git: git://git.debian.org/collab-maint/boss-viewer.git
+#Vcs-Browser: http://git.debian.org/?p=collab-maint/boss-viewer.git;a=summary
+
+Package: boss-viewer
+Architecture: all
+Depends: ${misc:Depends}, ruby-ruote-kit, boss
+Description: A web based viewer to provide an overview of BOSS processes
+ A wrapper around ruote-kit

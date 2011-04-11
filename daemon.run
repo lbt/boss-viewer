@@ -1,0 +1,7 @@
+#!/bin/sh
+# This is the boss-viewer daemontools 'run' command
+. /etc/default/boss-viewer
+exec 2>&1
+export HOME=`eval echo ~$VIEWER_USER`
+export SERVER_DATABASE
+exec setuidgid $VIEWER_USER $VIEWER_DAEMON $VIEWER_ARGS 

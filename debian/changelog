@@ -1,0 +1,5 @@
+boss-viewer (0.1-1) unstable; urgency=low
+
+  * Initial release of the ruote-kit wrapper
+
+ -- David Greaves <david@dgreaves.com>  Mon, 04 Apr 2011 16:30:30 +0100

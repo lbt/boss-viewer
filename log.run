@@ -1,0 +1,4 @@
+#!/bin/sh
+# This is the boss-viewer daemontools 'run' command for the log/ directory
+. /etc/default/boss-viewer
+exec setuidgid $VIEWER_USER multilog t $VIEWER_LOGDIR

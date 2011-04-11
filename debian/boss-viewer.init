@@ -1,0 +1,112 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          boss-viewer
+# Required-Start:    $remote_fs $network
+# Required-Stop:     $remote_fs $network
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: BOSS-VIEWER participant manager
+# Description:       BOSS-VIEWER participant manager
+### END INIT INFO
+
+# Changed from:
+# Default-Stop:      S 0 1 6
+# http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=521562
+
+set -e
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+DESC="BOSS-VIEWER service"
+NAME=$0
+SCRIPTNAME=/etc/init.d/$NAME
+SNAME=boss-viewer
+CONFIG=/etc/default/boss-viewer
+
+. $CONFIG
+
+# Trim trailing /
+SERVICE_DIR=${SERVICE_DIR%/}
+VIEWER_DAEMON_DIR=${VIEWER_DAEMON_DIR%/}
+
+
+assert_service_exists () {
+    if [ ! -e ${VIEWER_DAEMON_DIR} ]; then
+	echo "${SNAME} directory ${VIEWER_DAEMON_DIR} does not exist"
+	exit 1
+    fi
+}
+
+
+#       Function that starts the daemon/service.
+d_start()
+{
+        # Enable automatic start/stop/monitoring
+	if [ ! -e ${SERVICE_DIR}/${SNAME} ]; then
+	    ln -s ${VIEWER_DAEMON_DIR} ${SERVICE_DIR}/${SNAME}
+	    echo "${SNAME} enabled. Should start within 5 seconds"
+	else
+	    echo "${SNAME} already enabled. Should be running. Check logs."	    
+	fi
+}
+
+#       Function that stops the daemon/service.
+d_stop() {
+	# Prevent it from restarting at once by
+        # disabling automatic start/stop/monitoring
+	assert_service_exists
+	if [ -e ${SERVICE_DIR}/${SNAME} ]; then
+	    rm ${SERVICE_DIR}/${SNAME}
+	fi
+	# Shut down the supervise and log too
+	svc -dx ${VIEWER_DAEMON_DIR}
+	echo "Waiting 1 second to shut down logger"
+	sleep 1
+	svc -dx ${VIEWER_DAEMON_DIR}/log
+}
+
+ACTION="$1"
+case "$ACTION" in
+    start)
+        echo -n "Starting $DESC"
+        d_start
+        echo "."
+        ;;
+
+    stop)
+        echo -n "Stopping $DESC"
+        d_stop
+        echo "."
+        ;;
+
+    restart|force-reload)
+	assert_service_exists
+	# Take it down twice
+	svc -d ${VIEWER_DAEMON_DIR}
+	echo waiting 2 sec for graceful stop
+	sleep 2
+	echo restarting
+	svc -u ${VIEWER_DAEMON_DIR}
+	;;
+
+    status)
+	assert_service_exists
+	if svok ${VIEWER_DAEMON_DIR}; then
+	    svstat ${VIEWER_DAEMON_DIR}
+	else
+	    echo "Participant ${SNAME} is not running and has no supervisor"
+	    [ ! -e ${SERVICE_DIR}/${SNAME} ] && echo "It is not enabled for automatic running"
+	fi
+        ;;
+
+    log)
+	assert_service_exists
+	tail --follow=name ${VIEWER_LOGDIR}/current | tai64nlocal
+        ;;
+
+    *)
+        echo "Usage: $NAME {start|stop|restart|force-reload|log}" >&2
+        exit 3
+        ;;
+esac
+
+exit 0
+

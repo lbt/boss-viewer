@@ -1,0 +1,27 @@
+# Defaults for boss-viewer initscript
+# sourced by /etc/init.d/boss-viewer
+# installed at /etc/default/boss-viewer by the maintainer scripts
+
+#
+# This is a POSIX shell fragment
+#
+
+# If BOSS is installed, read the BOSS config for the SERVER_DATABASE
+[ -f /etc/default/boss ] && . /etc/default/boss
+
+# Add other boss-viewer values
+
+# Where the web content and code lives
+VIEWER_HOME=/var/lib/boss-viewer
+
+# Whilst BOSS uses the filesystem store this has to be on the same machine
+SERVER_DATABASE=${SERVER_DATABASE:-/var/spool/boss/boss_ruote_db}
+
+VIEWER_USER=boss-viewer
+VIEWER_GROUP=$SERVER_GROUP
+
+VIEWER_PIDFILE=/var/run/boss-viewer/pid
+VIEWER_DAEMON=/usr/bin/rackup1.8
+VIEWER_DAEMON_DIR=/var/lib/boss-viewer/boss-viewer
+VIEWER_LOGDIR=/var/log/boss-viewer
+VIEWER_ARGS="--port 9292 $VIEWER_HOME/boss-viewer.ru --pid $VIEWER_PIDFILE"

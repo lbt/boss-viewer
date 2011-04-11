@@ -1,0 +1,115 @@
+#! /bin/sh
+# Copyright (c) 2010 Nokia
+# Author David Greaves <david@dgreaves.com>
+# (based on standard openSuse init.d files)
+#
+# /etc/init.d/boss-viewer
+#
+### BEGIN INIT INFO
+# Provides: boss-viewer
+# Required-Start: rabbitmq-server
+# Required-Stop: $null
+# Default-Start: 3 5
+# Default-Stop: 0 1 2 6
+# Description: Start the boss engine
+### END INIT INFO
+
+BOSS_BIN=/usr/bin/boss
+test -x $BOSS_BIN || exit 5
+
+BOSS_SYSCONFIG=/etc/sysconfig/boss
+test -r $BOSS_SYSCONFIG || exit 6
+. $BOSS_SYSCONFIG
+
+BOSS_PIDFILE=/var/run/boss.pid
+
+. /etc/rc.status
+
+# Shell functions sourced from /etc/rc.status:
+#      rc_check         check and set local and overall rc status
+#      rc_status        check and set local and overall rc status
+#      rc_status -v     ditto but be verbose in local rc status
+#      rc_status -v -r  ditto and clear the local rc status
+#      rc_failed        set local and overall rc status to failed
+#      rc_reset         clear local rc status (overall remains)
+#      rc_exit          exit appropriate to overall rc status
+
+# First reset status of this service
+rc_reset
+
+case "$1" in
+    start)
+	echo -n "Starting BOSS daemon"
+	## Start daemon with startproc(8). If this fails
+	## the echo return value is set appropriate.
+
+	startproc -f $BOSS_BIN $BOSS_OPTS
+
+	# Remember status and be verbose
+	rc_status -v
+	;;
+    stop)
+	echo -n "Shutting down BOSS daemon"
+	## Stop daemon with killproc(8) and if this fails
+	## set echo the echo return value.
+
+	killproc -p $BOSS_PIDFILE -TERM $BOSS_BIN
+
+	# Remember status and be verbose
+	rc_status -v
+	;;
+    try-restart)
+        ## Stop the service and if this succeeds (i.e. the 
+        ## service was running before), start it again.
+        $0 status >/dev/null &&  $0 restart
+
+        # Remember status and be quiet
+        rc_status
+        ;;
+    restart)
+        ## Stop the service and regardless of whether it was
+        ## running or not, start it again.
+        $0 stop
+        $0 start
+
+        # Remember status and be quiet
+        rc_status
+        ;;
+    force-reload|reload)
+	## Signal the daemon to reload its config. Most daemons
+	## do this on signal 1 (SIGHUP).
+
+	echo -n "Reload service boss"
+
+	killproc -p $BOSS_PIDFILE -HUP $BOSS_BIN
+
+        rc_status -v
+
+        ;;
+    status)
+	echo -n "Checking for service boss "
+        ## Check status with checkproc(8), if process is running
+        ## checkproc will return with exit status 0.
+
+        # Status has a slightly different for the status command:
+        # 0 - service running
+        # 1 - service dead, but /var/run/  pid  file exists
+        # 2 - service dead, but /var/lock/ lock file exists
+        # 3 - service not running
+
+	checkproc -p $BOSS_PIDFILE $BOSS_BIN
+
+	rc_status -v
+	;;
+    probe)
+	## Optional: Probe for the necessity of a reload,
+	## give out the argument which is required for a reload.
+
+        echo probe not supported
+	;;
+    *)
+	echo "Usage: $0 {start|stop|status|try-restart|restart|force-reload|reload|probe}"
+	exit 1
+	;;
+esac
+rc_exit
