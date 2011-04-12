@@ -1,3 +1,10 @@
+boss-viewer (0.1-2) unstable; urgency=low
+
+  * Make the DB group writeable but no world read
+  * Use either /etc/default|sysconfig
+
+ -- David Greaves <david@dgreaves.com>  Tue, 12 Apr 2011 17:07:25 +0100
+
 boss-viewer (0.1-1) unstable; urgency=low
 
   * Initial release of the ruote-kit wrapper
