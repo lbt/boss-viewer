@@ -1,6 +1,8 @@
 #!/bin/sh
 # This is the boss-viewer daemontools 'run' command
-. /etc/default/boss-viewer
+[ -f /etc/default/boss-skynet ] && . /etc/default/boss-skynet
+[ -f /etc/sysconfig/boss-skynet ] && . /etc/sysconfig/boss-skynet
+
 exec 2>&1
 export HOME=`eval echo ~$VIEWER_USER`
 export SERVER_DATABASE
