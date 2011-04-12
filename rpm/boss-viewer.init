@@ -1,115 +1,112 @@
 #! /bin/sh
-# Copyright (c) 2010 Nokia
-# Author David Greaves <david@dgreaves.com>
-# (based on standard openSuse init.d files)
-#
-# /etc/init.d/boss-viewer
-#
 ### BEGIN INIT INFO
-# Provides: boss-viewer
-# Required-Start: rabbitmq-server
-# Required-Stop: $null
-# Default-Start: 3 5
-# Default-Stop: 0 1 2 6
-# Description: Start the boss engine
+# Provides:          boss-viewer
+# Required-Start:    $remote_fs $network
+# Required-Stop:     $remote_fs $network
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: BOSS-VIEWER participant manager
+# Description:       BOSS-VIEWER participant manager
 ### END INIT INFO
 
-BOSS_BIN=/usr/bin/boss
-test -x $BOSS_BIN || exit 5
+# Changed from:
+# Default-Stop:      S 0 1 6
+# http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=521562
 
-BOSS_SYSCONFIG=/etc/sysconfig/boss
-test -r $BOSS_SYSCONFIG || exit 6
-. $BOSS_SYSCONFIG
+set -e
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+DESC="BOSS-VIEWER service"
+NAME=$0
+SCRIPTNAME=/etc/init.d/$NAME
+SNAME=boss-viewer
+CONFIG=/etc/sysconfig/boss-viewer
 
-BOSS_PIDFILE=/var/run/boss.pid
+. $CONFIG
 
-. /etc/rc.status
+# Trim trailing /
+SERVICE_DIR=${SERVICE_DIR%/}
+VIEWER_DAEMON_DIR=${VIEWER_DAEMON_DIR%/}
 
-# Shell functions sourced from /etc/rc.status:
-#      rc_check         check and set local and overall rc status
-#      rc_status        check and set local and overall rc status
-#      rc_status -v     ditto but be verbose in local rc status
-#      rc_status -v -r  ditto and clear the local rc status
-#      rc_failed        set local and overall rc status to failed
-#      rc_reset         clear local rc status (overall remains)
-#      rc_exit          exit appropriate to overall rc status
 
-# First reset status of this service
-rc_reset
-
-case "$1" in
-    start)
-	echo -n "Starting BOSS daemon"
-	## Start daemon with startproc(8). If this fails
-	## the echo return value is set appropriate.
-
-	startproc -f $BOSS_BIN $BOSS_OPTS
-
-	# Remember status and be verbose
-	rc_status -v
-	;;
-    stop)
-	echo -n "Shutting down BOSS daemon"
-	## Stop daemon with killproc(8) and if this fails
-	## set echo the echo return value.
-
-	killproc -p $BOSS_PIDFILE -TERM $BOSS_BIN
-
-	# Remember status and be verbose
-	rc_status -v
-	;;
-    try-restart)
-        ## Stop the service and if this succeeds (i.e. the 
-        ## service was running before), start it again.
-        $0 status >/dev/null &&  $0 restart
-
-        # Remember status and be quiet
-        rc_status
-        ;;
-    restart)
-        ## Stop the service and regardless of whether it was
-        ## running or not, start it again.
-        $0 stop
-        $0 start
-
-        # Remember status and be quiet
-        rc_status
-        ;;
-    force-reload|reload)
-	## Signal the daemon to reload its config. Most daemons
-	## do this on signal 1 (SIGHUP).
-
-	echo -n "Reload service boss"
-
-	killproc -p $BOSS_PIDFILE -HUP $BOSS_BIN
-
-        rc_status -v
-
-        ;;
-    status)
-	echo -n "Checking for service boss "
-        ## Check status with checkproc(8), if process is running
-        ## checkproc will return with exit status 0.
-
-        # Status has a slightly different for the status command:
-        # 0 - service running
-        # 1 - service dead, but /var/run/  pid  file exists
-        # 2 - service dead, but /var/lock/ lock file exists
-        # 3 - service not running
-
-	checkproc -p $BOSS_PIDFILE $BOSS_BIN
-
-	rc_status -v
-	;;
-    probe)
-	## Optional: Probe for the necessity of a reload,
-	## give out the argument which is required for a reload.
-
-        echo probe not supported
-	;;
-    *)
-	echo "Usage: $0 {start|stop|status|try-restart|restart|force-reload|reload|probe}"
+assert_service_exists () {
+    if [ ! -e ${VIEWER_DAEMON_DIR} ]; then
+	echo "${SNAME} directory ${VIEWER_DAEMON_DIR} does not exist"
 	exit 1
+    fi
+}
+
+
+#       Function that starts the daemon/service.
+d_start()
+{
+        # Enable automatic start/stop/monitoring
+	if [ ! -e ${SERVICE_DIR}/${SNAME} ]; then
+	    ln -s ${VIEWER_DAEMON_DIR} ${SERVICE_DIR}/${SNAME}
+	    echo "${SNAME} enabled. Should start within 5 seconds"
+	else
+	    echo "${SNAME} already enabled. Should be running. Check logs."	    
+	fi
+}
+
+#       Function that stops the daemon/service.
+d_stop() {
+	# Prevent it from restarting at once by
+        # disabling automatic start/stop/monitoring
+	assert_service_exists
+	if [ -e ${SERVICE_DIR}/${SNAME} ]; then
+	    rm ${SERVICE_DIR}/${SNAME}
+	fi
+	# Shut down the supervise and log too
+	svc -dx ${VIEWER_DAEMON_DIR}
+	echo "Waiting 1 second to shut down logger"
+	sleep 1
+	svc -dx ${VIEWER_DAEMON_DIR}/log
+}
+
+ACTION="$1"
+case "$ACTION" in
+    start)
+        echo -n "Starting $DESC"
+        d_start
+        echo "."
+        ;;
+
+    stop)
+        echo -n "Stopping $DESC"
+        d_stop
+        echo "."
+        ;;
+
+    restart|force-reload)
+	assert_service_exists
+	# Take it down twice
+	svc -d ${VIEWER_DAEMON_DIR}
+	echo waiting 2 sec for graceful stop
+	sleep 2
+	echo restarting
+	svc -u ${VIEWER_DAEMON_DIR}
 	;;
+
+    status)
+	assert_service_exists
+	if svok ${VIEWER_DAEMON_DIR}; then
+	    svstat ${VIEWER_DAEMON_DIR}
+	else
+	    echo "Participant ${SNAME} is not running and has no supervisor"
+	    [ ! -e ${SERVICE_DIR}/${SNAME} ] && echo "It is not enabled for automatic running"
+	fi
+        ;;
+
+    log)
+	assert_service_exists
+	tail --follow=name ${VIEWER_LOGDIR}/current | tai64nlocal
+        ;;
+
+    *)
+        echo "Usage: $NAME {start|stop|restart|force-reload|log}" >&2
+        exit 3
+        ;;
 esac
-rc_exit
+
+exit 0
+
