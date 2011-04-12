@@ -1,6 +1,6 @@
 #!/bin/sh
 # This is the boss-viewer daemontools 'run' command for the log/ directory
-[ -f /etc/default/boss-skynet ] && . /etc/default/boss-skynet
-[ -f /etc/sysconfig/boss-skynet ] && . /etc/sysconfig/boss-skynet
+[ -f /etc/default/boss-viewer ] && . /etc/default/boss-viewer
+[ -f /etc/sysconfig/boss-viewer ] && . /etc/sysconfig/boss-viewer
 
 exec setuidgid $VIEWER_USER multilog t $VIEWER_LOGDIR
