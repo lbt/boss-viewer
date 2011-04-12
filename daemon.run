@@ -6,4 +6,6 @@
 exec 2>&1
 export HOME=`eval echo ~$VIEWER_USER`
 export SERVER_DATABASE
+# Keep the DB private but group readable
+umask 0007
 exec setuidgid $VIEWER_USER $VIEWER_DAEMON $VIEWER_ARGS 
