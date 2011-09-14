@@ -1,3 +1,9 @@
+boss-viewer (0.1-3) unstable; urgency=low
+
+  * Don't mess with the boss user/group
+
+ -- Pami Ketolainen <ext-pami.o.ketolainen@nokia.com>  Wed, 14 Sep 2011 12:29:02 +0300
+
 boss-viewer (0.1-2) unstable; urgency=low
 
   * Make the DB group writeable but no world read
