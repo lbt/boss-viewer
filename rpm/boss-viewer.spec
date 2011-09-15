@@ -1,5 +1,5 @@
 %define name boss-viewer
-%define version 0.1
+%define version 0.2
 %define release 1
 
 Summary: BOSS ruote-kit
