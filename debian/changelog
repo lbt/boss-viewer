@@ -1,4 +1,4 @@
-boss-viewer (0.2-1) unstable; urgency=low
+boss-viewer (0.1.2-1) unstable; urgency=low
 
   * Do not clear the registered participant list on start
   * Shutdown engine nicely on SIGTERM and ask also Rack to die cleanly
